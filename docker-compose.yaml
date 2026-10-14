@@ -8,3 +8,49 @@ services:
       - ./sftp_host_keys/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key
       - ./sftp_host_keys/ssh_host_rsa_key:/etc/ssh/ssh_host_rsa_key
     command:  user:password:::upload
+
+  db:
+      image: postgres:15
+      container_name: mypayment-db
+      restart: always
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: 123
+        POSTGRES_DB: payment
+      ports:
+        - "5429:5432"
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      networks:
+        - spring-network
+      healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U postgres -d payment" ]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+        start_period: 10s
+
+  liquibase:
+      image: liquibase/liquibase:4.29
+      depends_on:
+        db:
+          condition: service_healthy
+      networks:
+        - spring-network
+      volumes:
+        - ./db-migration/changelog:/liquibase/changelog
+      command:
+        [
+          "--search-path=/liquibase/changelog",
+          "--url=jdbc:postgresql://db:5432/payment",
+          "--changelog-file=master.xml",
+          "--username=postgres",
+          "--password=123",
+          "update"
+        ]
+      restart: on-failure
+networks:
+    spring-network:
+
+volumes:
+    pgdata:

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.23.xsd">
+
+    <changeSet id="1.0.0-01-create-merchants" author="kostaskara">
+        <createTable tableName="merchants">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_merchants" nullable="false"/>
+            </column>
+            <column name="merchant_code" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_merchants_merchant_code"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="country" type="VARCHAR(64)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-02-create-customers" author="kostaskara">
+        <createTable tableName="customers">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_customers" nullable="false"/>
+            </column>
+            <column name="customer_code" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_customers_customer_code"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(320)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-create-transactions" author="kostaskara">
+        <createTable tableName="transactions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_transactions" nullable="false"/>
+            </column>
+            <column name="transaction_id" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_transactions_transaction_id"/>
+            </column>
+            <column name="transaction_type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="NUMERIC(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="merchant_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_transactions_merchant"
+                             referencedTableName="merchants"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="customer_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_transactions_customer"
+                             referencedTableName="customers"
+                             referencedColumnNames="id"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="transactions" indexName="idx_transactions_merchant_id">
+            <column name="merchant_id"/>
+        </createIndex>
+        <createIndex tableName="transactions" indexName="idx_transactions_customer_id">
+            <column name="customer_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="1.0.0-04-create-payments" author="kostaskara">
+        <createTable tableName="payments">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_payments" nullable="false"/>
+            </column>
+            <!-- unique FK enforces one payment per transaction -->
+            <column name="transaction_id" type="BIGINT">
+                <constraints nullable="false"
+                             unique="true"
+                             uniqueConstraintName="uq_payments_transaction_id"
+                             foreignKeyName="fk_payments_transaction"
+                             referencedTableName="transactions"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="payment_method" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="card_brand" type="VARCHAR(32)"/>
+            <column name="card_last4" type="VARCHAR(4)"/>
+            <column name="authorization_code" type="VARCHAR(64)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-05-create-adjustments" author="kostaskara">
+        <createTable tableName="adjustments">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_adjustments" nullable="false"/>
+            </column>
+            <column name="transaction_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_adjustments_transaction"
+                             referencedTableName="transactions"
+                             referencedColumnNames="id"/>
+            </column>
+            <!-- PROCESSING_FEE, TAX, DISCOUNT, REFUND, CHARGEBACK, ... -->
+            <column name="adjustment_type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="NUMERIC(19,4)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="adjustments" indexName="idx_adjustments_transaction_id">
+            <column name="transaction_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="1.0.0-06-create-transaction-status-history" author="kostaskara">
+        <createTable tableName="transaction_status_history">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_transaction_status_history" nullable="false"/>
+            </column>
+            <column name="transaction_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_transaction_status_history_transaction"
+                             referencedTableName="transactions"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="changed_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="transaction_status_history" indexName="idx_transaction_status_history_transaction_id">
+            <column name="transaction_id"/>
+            <column name="changed_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
