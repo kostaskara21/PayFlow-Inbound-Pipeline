@@ -1,9 +1,12 @@
 package com.kara.payflow.configuration;
 
+import com.kara.payflow.mapper.TransactionMapper;
+import com.kara.payflow.service.TransactionProcesService;
 import org.apache.sshd.sftp.client.SftpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.integration.file.remote.session.CachingSessionFactory;
 import org.springframework.integration.file.remote.session.Session;
 import org.springframework.integration.file.remote.session.SessionFactory;
@@ -22,10 +25,11 @@ class SftpConnectionTest {
     private static final String UPLOAD_DIR = "/upload";
 
     private static SessionFactory<SftpClient.DirEntry> sessionFactory;
+    private static TransactionProcesService transactionProcesService;
 
     @BeforeAll
     static void createSessionFactory() {
-        sessionFactory = new Sftpconfig().sessionFactory();
+        sessionFactory = new Sftpconfig(Mappers.getMapper(TransactionMapper.class), transactionProcesService).sessionFactory();
     }
 
     @AfterAll
