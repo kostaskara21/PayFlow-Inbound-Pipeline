@@ -1,8 +1,10 @@
 package com.kara.payflow.configuration;
 
-import com.example.payflow.contracts.Transaction;
+import com.kara.payflow.mapper.TransactionMapper;
 import com.kara.payflow.model.TransactionCsvRow;
+import com.kara.payflow.service.TransactionProcesService;
 import com.kara.payflow.util.CsvProcessor;
+import lombok.RequiredArgsConstructor;
 import org.apache.sshd.sftp.client.SftpClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +26,12 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 @Configuration
+@RequiredArgsConstructor
 public class Sftpconfig {
+    private final TransactionMapper transactionMapper;
+    private  final TransactionProcesService transactionProcesService;
+
+
     @Bean
     public SessionFactory<SftpClient.DirEntry> sessionFactory() {
 
@@ -78,7 +85,9 @@ public class Sftpconfig {
                     System.out.println("Processing New File: " + file.getName());
                     try {
                         List<TransactionCsvRow> transactions = CsvProcessor.read(file.getPath(), TransactionCsvRow.class);
-                        transactions.forEach(System.out::println);
+
+                        transactionProcesService.process(transactions);
+
                     } catch (IOException e) {
                         System.out.println("Could not read " + file.getName() + ": " + e.getMessage());
                     }

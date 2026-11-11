@@ -23,6 +23,5 @@ public class SftpController {
             @RequestParam("file") MultipartFile file) throws Exception {
 
         return uploadService.upload(file);
-
     }
 }
